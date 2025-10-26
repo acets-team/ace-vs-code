@@ -1,0 +1,52 @@
+{
+  "name": "ace-vs-code",
+  "icon": "icon.png",
+  "displayName": "Ace for VS Code",
+  "description": "Provides links to Ace API's right above API Function calls!",
+  "version": "0.0.3",
+  "publisher": "acets-team",
+  "main": "./dist/extension.js",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "cloud": "npm run compile && vsce package && vsce publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acets-team/ace"
+  },
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
+  ],
+  "contributes": {
+    "codeLensProviders": [
+      {
+        "language": "typescript",
+        "provider": "ace-vs-code"
+      },
+      {
+        "language": "typescriptreact",
+        "provider": "ace-vs-code"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.6.2",
+    "typescript": "^5.4.0"
+  },
+  "keywords": [
+    "ace",
+    "acets",
+    "acets-team",
+    "ace-vs-code",
+    "typescript",
+    "codelens",
+    "api"
+  ]
+}
