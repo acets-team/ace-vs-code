@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "name": "ace-vs-code",
+      "version": "0.0.4",
+      "publisher": "acets-team",
+      "vsixUrl": "https://github.com/acets-team/ace-vs-code/releases/latest/download/ace-vs-code-0.0.4.vsix",
+      "description": "Provides links to Ace API's right above API Function calls! & if you're wondering what in the world is Ace... We're the typesafetiest framework!",
+      "categories": [
+        "ace",
+        "acets",
+        "acets-team",
+        "ace-vs-code",
+        "typescript",
+        "codelens",
+        "api"
+      ]
+    }
+  ]
+}
