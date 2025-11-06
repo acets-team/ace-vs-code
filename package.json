@@ -3,7 +3,7 @@
   "icon": "icon.png",
   "displayName": "Ace for VS Code",
   "description": "Provides links to Ace API's right above API Function calls!",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "acets-team",
   "main": "./dist/extension.js",
   "license": "MIT",
