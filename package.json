@@ -7,13 +7,16 @@
   "publisher": "acets-team",
   "main": "./dist/extension.js",
   "license": "MIT",
-  "categories": ["Programming Languages"],
+  "categories": [
+    "Programming Languages"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
   "scripts": {
     "compile": "tsc -p .",
-    "cloud": "npm run compile && vsce package && vsce publish"
+    "publish:vscode": "vsce publish",
+    "publish:openvsx": "ovsx publish *.vsix"
   },
   "repository": {
     "type": "git",
@@ -39,6 +42,7 @@
     "@types/node": "^24.9.1",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.6.2",
+    "ovsx": "^0.10.6",
     "typescript": "^5.4.0"
   },
   "keywords": [

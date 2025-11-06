@@ -11,7 +11,7 @@ export class CodeLenses {
   static apiName2Path: Map<string, string> = new Map()
   static workspaceRoot = workspace.workspaceFolders?.[0].uri.fsPath
   static files: {
-    apis: FileMeta
+    regex: FileMeta
     loaders: FileMeta
   }
 
@@ -29,8 +29,8 @@ export class CodeLenses {
   static async Build(document: TextDocument): Promise<null | CodeLenses> {
     if (!CodeLenses.workspaceRoot) return null
 
-    const apis: any = {
-      path: join(CodeLenses.workspaceRoot, '.ace/fundamentals/apis.ts')
+    const regex: any = {
+      path: join(CodeLenses.workspaceRoot, '.ace/fundamentals/regexApiNames.ts')
     }
 
     const loaders: any = {
@@ -38,26 +38,26 @@ export class CodeLenses {
     }
 
     const [apisExists, loadersExists] = await Promise.all([
-      exists(apis.path),
+      exists(regex.path),
       exists(loaders.path)
     ])
 
     if (!apisExists || !loadersExists) return null
 
-    apis.exists = apisExists
+    regex.exists = apisExists
     loaders.exists = loadersExists
 
     const [apisStats, loadersStats] = await Promise.all([
-      stat(apis.path),
+      stat(regex.path),
       stat(loaders.path)
     ])
 
-    apis.stats = apisStats
+    regex.stats = apisStats
     loaders.stats = loadersStats
 
-    CodeLenses.files = { apis, loaders }
+    CodeLenses.files = { regex, loaders }
 
-    if (!CodeLenses.apiName2Path.size || apis.stats.mtimeMs !== CodeLenses.lastApisMtime || loaders.stats.mtimeMs !== CodeLenses.lastLoadersMtime) { // IF no apiName2Path OR @ace/apis changed OR @ace/loaders changed THEN rebuild apiName2Path
+    if (!CodeLenses.apiName2Path.size || regex.stats.mtimeMs !== CodeLenses.lastApisMtime || loaders.stats.mtimeMs !== CodeLenses.lastLoadersMtime) { // IF no apiName2Path OR @ace/apis changed OR @ace/loaders changed THEN rebuild apiName2Path
       await CodeLenses.setApiName2Path() // depends on CodeLenses.files = { apis, loaders }
     }
 
@@ -71,37 +71,63 @@ export class CodeLenses {
   static async setApiName2Path() {
     if (!CodeLenses.workspaceRoot) return
 
-    CodeLenses.lastApisMtime = CodeLenses.files.apis.stats.mtimeMs
-    CodeLenses.lastLoadersMtime = CodeLenses.files.loaders.stats.mtimeMs
+    const regexApiNamesPath = join(CodeLenses.workspaceRoot, '.ace/fundamentals/regexApiNames.ts')
+    const existsRegex = await exists(regexApiNamesPath)
+    if (!existsRegex) return
 
-    const [apisText, loadersText] = await Promise.all([
-      readFile(CodeLenses.files.apis.path, 'utf8'),
-      readFile(CodeLenses.files.loaders.path, 'utf8')
-    ])
+    const stats = await stat(regexApiNamesPath)
+    CodeLenses.lastApisMtime = stats.mtimeMs
 
-    // map API function -> loader
-    const apiToLoaderMap: Record<string, string> = {}
-    const apiRegex = /export\s+const\s+(\w+)\s*=\s*createApiFn\([^,]+,[^,]+,[^,]+,\s*apiLoaders\.(\w+)\)/g
+    const text = await readFile(regexApiNamesPath, 'utf8')
 
-    for (const match of apisText.matchAll(apiRegex)) {
-      const [, apiName, loaderName] = match
-      apiToLoaderMap[apiName] = loaderName
+    // Example match:
+    // 'apiGetFinances': {
+    //   path: '/api/get-finances',
+    //   method: 'GET',
+    //   pattern: /^\/api\/get-finances\/?$/,
+    //   loader: apiLoaders.apiGetFinancesLoader,
+    // },
+    //
+    // We want -> apiName = apiGetFinances, loaderName = apiGetFinancesLoader
+
+    const apiRegex = /['"](?<apiName>\w+)['"]\s*:\s*\{[\s\S]*?loader:\s*apiLoaders\.(?<loaderName>\w+)/g
+    const apiLoaderMatches = [...text.matchAll(apiRegex)]
+
+    if (!apiLoaderMatches.length) return
+
+    const apiNameToLoader: Record<string, string> = {}
+
+    for (const m of apiLoaderMatches) {
+      if (m.groups?.apiName && m.groups?.loaderName) {
+        apiNameToLoader[m.groups.apiName] = m.groups.loaderName
+      }
     }
 
-    const loaderRegex = /export\s+async\s+function\s+(\w+)\s*\([^)]*\)\s*{[\s\S]*?import\(["'](\.\.\/\.\.\/src\/api\/[^"']+)["']\)/g
-    const loaderFilePath = join(CodeLenses.workspaceRoot, '.ace/fundamentals/apiLoaders.ts')
+    const apiLoadersPath = join(CodeLenses.workspaceRoot, '.ace/fundamentals/apiLoaders.ts')
+    const loadersText = await readFile(apiLoadersPath, 'utf8')
 
+    // Extract loader name -> import path
+    const loaderRegex = /export\s+async\s+function\s+(?<loaderName>\w+)\s*\([^)]*\)\s*{[\s\S]*?import\(["'](?<importPath>\.\.\/\.\.\/src\/api\/[^"']+)["']\)/g
+
+    const loaderFilePath = apiLoadersPath
+    const loaderToPath: Record<string, string> = {}
+
+    for (const m of loadersText.matchAll(loaderRegex)) {
+      const { loaderName, importPath } = m.groups ?? {}
+
+      if (loaderName && importPath) {
+        loaderToPath[loaderName] = resolve(dirname(loaderFilePath), importPath + '.ts')
+      }
+    }
+
+    // Build final apiName -> absolutePath map
     CodeLenses.apiName2Path = new Map()
 
+    for (const [apiName, loaderName] of Object.entries(apiNameToLoader)) {
+      const absPath = loaderToPath[loaderName]
 
-    for (const match of loadersText.matchAll(loaderRegex)) {
-      const [, loaderName, importPath] = match
-      const absolutePath = resolve(dirname(loaderFilePath), importPath + '.ts')
-
-      for (const [apiName, name] of Object.entries(apiToLoaderMap)) {
-        if (name === loaderName) {
-          CodeLenses.apiName2Path.set(apiName, absolutePath)
-        }
+      if (absPath) {
+        CodeLenses.apiName2Path.set(apiName, absPath)
       }
     }
   }
