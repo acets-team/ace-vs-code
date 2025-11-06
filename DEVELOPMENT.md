@@ -22,3 +22,4 @@
       - `git push` by itself only pushes commits, **not tags**.
       - `--follow-tags` pushes both the commit and the tag (so `GitHub` can create the release properly)
 1. Publish: `npm run publish`
+1. Standard `git commit` + `push` for the most recent `.vsix` file
