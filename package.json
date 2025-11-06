@@ -3,7 +3,7 @@
   "icon": "icon.png",
   "displayName": "Ace for VS Code",
   "description": "Provides links to Ace API's right above API Function calls!",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "publisher": "acets-team",
   "main": "./dist/extension.js",
   "license": "MIT",
@@ -15,8 +15,10 @@
   },
   "scripts": {
     "compile": "tsc -p .",
-    "publish:vscode": "vsce publish",
-    "publish:openvsx": "ovsx publish *.vsix"
+    "package": "npm run compile && vsce package",
+    "publish:vscode": "npm run compile && vsce publish",
+    "publish:openvsx": "npm run package && ovsx publish $(ls -t *.vsix | head -1)",
+    "publish": "rm -f *.vsix && npm run package && npm run publish:vscode && npm run publish:openvsx"
   },
   "repository": {
     "type": "git",

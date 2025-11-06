@@ -21,6 +21,4 @@
       - `npm version patch` (or `minor`/`major`) creates both a `commit` and a `git tag`
       - `git push` by itself only pushes commits, **not tags**.
       - `--follow-tags` pushes both the commit and the tag (so `GitHub` can create the release properly)
-1. Publish to VS Code: `npm run publish:vscode`
-1. Publish to Open VSX: `npm run publish:openvsx`
-    - The version that gets published is the `package.json` > `version`
+1. Publish: `npm run publish`
